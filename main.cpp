@@ -54,6 +54,12 @@ int main(int argc, char * argv[])
       sprintf (msg, "%d", 2 * n * n + (n + 3 * m) * m);
       return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
     }
+  if (a == nullptr)
+    {
+      char msg[100];
+      sprintf (msg, "%d", 2 * n * n + (n + 3 * m) * m);
+      return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
+    }
   x = a + n * n;
   err = InitMatr (a, n, s, fi);
   if (err != SUCCESS) {
