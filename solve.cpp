@@ -205,3 +205,82 @@ Residual (double* a, double* x, int n, int m, int pos_mul)
     }
   return res;
 }
+
+//Перед обращением надо правильно заполнить массив перестановки индексов
+int
+Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *ind)
+{
+  memset (inversed, 0, matrix_n * matrix_n * sizeof (double));
+  for (int i = 0; i < matrix_n; i++)
+    {
+      inversed[i * matrix_n + i] = 1.;
+    }
+  //Прямой ход
+  for (int s = 0; s < matrix_n; s++)
+    {
+      //Нахождение главного
+      double max = fabs (matrix[ind[s] * matrix_n + s]);
+      double reverse = 0;
+      int n_max = s;
+      int swap = 0;
+      int i = 0;
+      for (i = s + 1; i < matrix_n; i++)
+        {
+          if (fabs (matrix[ind[i] * matrix_n + s]) > max)
+            {
+              max = fabs (matrix[ind[i] * matrix_n + s]);
+              n_max = i;
+            }
+        }
+      swap = ind[s];
+      ind[s] = ind[n_max];
+      ind[n_max] = swap;
+      
+      //Домножаем строку на обратный к первому элементу
+      if (fabs (matrix[ind[s] * matrix_n + s]) < matrix_norm * EPS)
+        {
+          return -1;
+        }
+      reverse = 1. / matrix[ind[s] * matrix_n + s];
+      matrix[ind[s] * matrix_n + s] = 1.;
+      for (i = 0; i < s + 1; i++)
+        {
+          inversed[ind[s] * matrix_n + i] *= reverse;
+        }
+      for (int i = s + 1; i < matrix_n; i++)
+        {
+          inversed[ind[s] * matrix_n + i] *= reverse;
+          matrix[ind[s] * matrix_n + i] *= reverse;
+        }
+      
+      //Из каждой нижележащей строки вычитаем первую, домноженную на первый элемент строки
+      for (i = s + 1; i < matrix_n; i++)
+        {
+          int j = 0;
+          
+          for (j = 0; j < s + 1; j++)
+            {
+              inversed[ind[i] * matrix_n + j] -= matrix[ind[i] * matrix_n + s] * inversed[ind[s] * matrix_n + j];
+            }
+          for (; j < matrix_n; j++)
+            {
+              inversed[ind[i] * matrix_n + j] -= matrix[ind[i] * matrix_n + s] * inversed[ind[s] * matrix_n + j];
+              matrix[ind[i] * matrix_n + j] -= matrix[ind[i] * matrix_n + s] * matrix[ind[s] * matrix_n + j];
+            }
+          //matrix[ind[i] * matrix_n + s] = 0.;
+        }
+    }
+  for (int s = matrix_n - 1; s >= 0; s--)
+    {
+      //Для всех вышележащих вычитаем последнюю строку, домноженную на s-ый элемент строки
+      for (int i = s - 1; i >= 0; i--)
+        {
+          for (int j = 0; j < matrix_n; j++)
+            {
+              inversed[ind[i] * matrix_n + j] -= inversed[ind[s] * matrix_n + j] * matrix[ind[i] * matrix_n + s];
+            }
+          //matrix[ind[i] * matrix_n + s] = 0.;
+        }
+    }
+  return 0;
+}

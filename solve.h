@@ -12,5 +12,6 @@ double Norm (double *a, int v, int h);
 void Multi (double *x, double *y, double *res, int vx, int hx, int hy);
 void Plus (double *x, double *y, double *res, int v, int h);
 void Minus (double *x, double *y, double *res, int v, int h);
+int Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *ind);
 
 #endif

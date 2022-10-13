@@ -14,6 +14,7 @@ int main(int argc, char * argv[])
   FILE *fi = nullptr; //Input file
   double* a = nullptr; //Pointer of matrix
   double* x = nullptr; //Pointer of attached matrix
+  double matrix_norm = 0; //Norm of matrix
   double time1 = 0, time2 = 0, time3 = 0, time4 = 0;
   double elapsed = 0; //Time of calculating inversed matrix
   double residual_time = 0; //Time of calculating residual
@@ -48,12 +49,12 @@ int main(int argc, char * argv[])
   try
     {
       a = new double[2 * n * n + (n + 3 * m) * m  + n];
-      ind = new int[n];
+      ind = new int[n + m];
     }
   catch (std::bad_alloc& e)
     {
       char msg[100];
-      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m + n) * sizeof (double) + n * sizeof (int));
+      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m + n) * sizeof (double) + (n + m) * sizeof (int));
       return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
     }
   if (a == nullptr || ind == nullptr)
@@ -76,17 +77,17 @@ int main(int argc, char * argv[])
   err = InitMatr (x, n, 10, fi);
   fprintf (stdout, "Initial matrix:\n");
   PrintMatr (a, r, r, n);
-  //double bignorm = Norm (a, n, n); //Norm of the whole matrix
+  matrix_norm = Norm (a, n, n); //Norm of the whole matrix
   time1 = clock ();
-  //err = Solve(a, x, n, m, bignorm);
+  err = Inverse (a, x, n, matrix_norm, ind);
   time2 = clock ();
-  /*if (err)
+  if (err)
     {
-      cerr << "Cannot solve system" << endl;
+      printf("Cannot solve system\n");
       delete[] a;
       delete[] ind;
       return -1;
-    }*/
+    }
   fprintf (stdout, "Inversed matrix:\n");
   PrintMatr (x, r, r, n);
   if (s == 0)
