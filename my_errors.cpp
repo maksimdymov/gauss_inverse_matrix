@@ -26,7 +26,7 @@ PrintErrorMsgByCode (int code, char* msg)
       break;
 
     case ALLOCATE_MEMORY_ERROR:
-      fprintf (stderr, "Cannot allocate %s size\n", msg);
+      fprintf (stderr, "Cannot allocate %s bytes\n", msg);
       break;
 
     case END_OF_FILE:

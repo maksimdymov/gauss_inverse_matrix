@@ -19,6 +19,7 @@ int main(int argc, char * argv[])
   double residual_time = 0; //Time of calculating residual
   double r1 = 0; //Residual 1
   double r2 = 0; //Residual 2
+  int *ind = nullptr; //Array of indexes
 
   if ((argc != 5) && (argc != 6))
     {
@@ -46,24 +47,30 @@ int main(int argc, char * argv[])
     }
   try
     {
-      a = new double[2 * n * n + (n + 3 * m) * m];
+      a = new double[2 * n * n + (n + 3 * m) * m  + n];
+      ind = new int[n];
     }
   catch (std::bad_alloc& e)
     {
       char msg[100];
-      sprintf (msg, "%d", 2 * n * n + (n + 3 * m) * m);
+      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m + n) * sizeof (double) + n * sizeof (int));
       return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
     }
-  if (a == nullptr)
+  if (a == nullptr || ind == nullptr)
     {
       char msg[100];
-      sprintf (msg, "%d", 2 * n * n + (n + 3 * m) * m);
+      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m + n) * sizeof (double) + n * sizeof (int));
       return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
+    }
+  for (int i = 0; i < n; i++)
+    {
+      ind[i] = i;
     }
   x = a + n * n;
   err = InitMatr (a, n, s, fi);
   if (err != SUCCESS) {
       delete[] a;
+      delete[] ind;
       return PrintErrorMsgByCode (err, argv[5]);
     }
   err = InitMatr (x, n, 10, fi);
@@ -71,12 +78,13 @@ int main(int argc, char * argv[])
   PrintMatr (a, r, r, n);
   //double bignorm = Norm (a, n, n); //Norm of the whole matrix
   time1 = clock ();
-  //err = Solve(a, b, x, n, m, bignorm);
+  //err = Solve(a, x, n, m, bignorm);
   time2 = clock ();
   /*if (err)
     {
       cerr << "Cannot solve system" << endl;
       delete[] a;
+      delete[] ind;
       return -1;
     }*/
   fprintf (stdout, "Inversed matrix:\n");
@@ -97,6 +105,7 @@ int main(int argc, char * argv[])
       time4 = clock ();
     }
   delete[] a;
+  delete[] ind;
   elapsed = (time2 - time1) / CLOCKS_PER_SEC;
   residual_time = (time4 - time3) / CLOCKS_PER_SEC;
   //printf ("%e\n", bignorm);

@@ -5,13 +5,17 @@
 #define EPS 1.110223e-16
 
 int
-Ind (int ibl, int jbl, int iel, int jel, int n, int m)
+Ind (int ibl, int jbl, int iel, int jel, int n, int m, int *ind)
 {
+  if (ind)
+    {
+      return n * ind[m * ibl + iel] + m * jbl + jel;
+    }
   return n * (m * ibl + iel) + m * jbl + jel;
 }
 
 void
-GetBlock (double *a, double *x, int ibl, int jbl, int n, int m)
+GetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind)
 {
   int v = 0; //Number of lines
   int h = 0; //Number of columns
@@ -20,19 +24,19 @@ GetBlock (double *a, double *x, int ibl, int jbl, int n, int m)
   h = (jbl < k ? m : l);
   for (int i = 0; i < v; i++)
     {
-      memcpy (x + i * h, a + Ind (ibl, jbl, i, 0, n, m), h * sizeof (double));
+      memcpy (x + i * h, a + Ind (ibl, jbl, i, 0, n, m, ind), h * sizeof (double));
     }
 }
 
 void
-SetBlock (double *a, double *x, int ibl, int jbl, int n, int m)
+SetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind)
 {
   int v = 0, h = 0, l = n % m, k = n / m;
   v = (ibl < k ? m : l);
   h = (jbl < k ? m : l);
   for (int i = 0; i < v; i++)
     {
-      memcpy (a + Ind (ibl, jbl, i, 0, n, m), x + i * h, h * sizeof (double));
+      memcpy (a + Ind (ibl, jbl, i, 0, n, m, ind), x + i * h, h * sizeof (double));
     }
 }
 
@@ -164,6 +168,7 @@ Residual (double* a, double* x, int n, int m, int pos_mul)
   double* d2 = nullptr;
   double* d3 = nullptr;
   double norm = 0; //Norm of block line of product
+  int *ind = nullptr;
 
   memset(mul, 0, (n + 3 * m) * m * sizeof (double));
   d1 = mul + n * m;
@@ -179,17 +184,17 @@ Residual (double* a, double* x, int n, int m, int pos_mul)
             {
               int hx = (s < k) ? m : l; //Number of columns in first multiplier
               int hy = (j < k) ? m : l; //Number of columns in second multiplier
-              GetBlock (a, d1, i, s, n, m);
-              GetBlock (x, d2, s, j, n, m);
+              GetBlock (a, d1, i, s, n, m, ind);
+              GetBlock (x, d2, s, j, n, m, ind);
               Multi (d1, d2, d3, vx, hx, hy);
-              GetBlock (mul, d1, 0, j, n, m);
+              GetBlock (mul, d1, 0, j, n, m, ind);
               Plus (d1, d3, d2, vx, hy);
-              SetBlock (mul, d2, 0, j, n, m);
+              SetBlock (mul, d2, 0, j, n, m, ind);
             }
         }
       for (int j = 0; j < vx; j++)
         {
-          mul[Ind (0, i, j, j, n, m)]--;
+          mul[Ind (0, i, j, j, n, m, ind)]--;
         }
       norm = Norm (mul, vx, n);
       if (norm > res)

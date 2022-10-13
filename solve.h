@@ -4,9 +4,9 @@
 #include <cstring>
 #include <new>
 
-int Ind (int ibl, int jbl, int iel, int jel, int n, int m);
-void GetBlock (double *a, double *x, int ibl, int jbl, int n, int m);
-void SetBlock (double *a, double *x, int ibl, int jbl, int n, int m);
+int Ind (int ibl, int jbl, int iel, int jel, int n, int m, int *ind);
+void GetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind);
+void SetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind);
 double Residual (double* a, double* x, int n, int m, int pos_mul);
 double Norm (double *a, int v, int h);
 void Multi (double *x, double *y, double *res, int vx, int hx, int hy);
