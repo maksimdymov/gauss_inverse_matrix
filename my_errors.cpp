@@ -37,6 +37,10 @@ PrintErrorMsgByCode (int code, char* msg)
       fprintf (stderr, "Too many information in file %s\n", msg);
       break;
 
+    case CANNOT_SOLVE:
+      fprintf (stderr, "Cannot inverse matrix\n");
+      break;
+
     default:
       fprintf (stderr, "Sorry, something went wrong...\nError code: %d\nError message: %s", code, msg);
       break;

@@ -15,6 +15,7 @@ enum ReturnValues
   FILE_OPENING_ERROR,
   MAIN_ARGS_ERROR,
   SUCCESS,
+  CANNOT_SOLVE,
 };
 
 #endif

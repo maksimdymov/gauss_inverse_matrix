@@ -48,19 +48,19 @@ int main(int argc, char * argv[])
     }
   try
     {
-      a = new double[2 * n * n + (n + 3 * m) * m  + n];
+      a = new double[2 * n * n + (n + 4 * m) * m];
       ind = new int[n + m];
     }
   catch (std::bad_alloc& e)
     {
       char msg[100];
-      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m + n) * sizeof (double) + (n + m) * sizeof (int));
+      sprintf (msg, "%ld", (2 * n * n + (n + 4 * m) * m) * sizeof (double) + (n + m) * sizeof (int));
       return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
     }
   if (a == nullptr || ind == nullptr)
     {
       char msg[100];
-      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m + n) * sizeof (double) + n * sizeof (int));
+      sprintf (msg, "%ld", (2 * n * n + (n + 3 * m) * m) * sizeof (double) + (n + m) * sizeof (int));
       return PrintErrorMsgByCode (ALLOCATE_MEMORY_ERROR, msg);
     }
   for (int i = 0; i < n; i++)
@@ -79,14 +79,14 @@ int main(int argc, char * argv[])
   PrintMatr (a, r, r, n);
   matrix_norm = Norm (a, n, n); //Norm of the whole matrix
   time1 = clock ();
-  err = Inverse (a, x, n, matrix_norm, ind);
+  //err = Inverse (a, x, n, matrix_norm, ind);
+  err = Solve (a, x, n, m, matrix_norm, ind);
   time2 = clock ();
-  if (err)
+  if (err == CANNOT_SOLVE)
     {
-      printf("Cannot solve system\n");
       delete[] a;
       delete[] ind;
-      return -1;
+      return PrintErrorMsgByCode (err, argv[0]);
     }
   fprintf (stdout, "Inversed matrix:\n");
   PrintMatr (x, r, r, n);
@@ -109,7 +109,6 @@ int main(int argc, char * argv[])
   delete[] ind;
   elapsed = (time2 - time1) / CLOCKS_PER_SEC;
   residual_time = (time4 - time3) / CLOCKS_PER_SEC;
-  //printf ("%e\n", bignorm);
   printf ("%s : Task = %d Res1 = %e Res2 = %e T1 = %.2f T2 = %.2f S = %d N = %d M = %d\n", argv[0], 12, r1, r2, elapsed, residual_time, s, n, m);
   return 0;
 }

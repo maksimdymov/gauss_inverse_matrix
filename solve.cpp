@@ -15,7 +15,7 @@ Ind (int ibl, int jbl, int iel, int jel, int n, int m, int *ind)
 }
 
 void
-GetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind)
+GetBlock (double *src, double *dest, int ibl, int jbl, int n, int m, int *ind)
 {
   int v = 0; //Number of lines
   int h = 0; //Number of columns
@@ -24,19 +24,19 @@ GetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind)
   h = (jbl < k ? m : l);
   for (int i = 0; i < v; i++)
     {
-      memcpy (x + i * h, a + Ind (ibl, jbl, i, 0, n, m, ind), h * sizeof (double));
+      memcpy (dest + i * h, src + Ind (ibl, jbl, i, 0, n, m, ind), h * sizeof (double));
     }
 }
 
 void
-SetBlock (double *a, double *x, int ibl, int jbl, int n, int m, int *ind)
+SetBlock (double *dest, double *src, int ibl, int jbl, int n, int m, int *ind)
 {
   int v = 0, h = 0, l = n % m, k = n / m;
   v = (ibl < k ? m : l);
   h = (jbl < k ? m : l);
   for (int i = 0; i < v; i++)
     {
-      memcpy (a + Ind (ibl, jbl, i, 0, n, m, ind), x + i * h, h * sizeof (double));
+      memcpy (dest + Ind (ibl, jbl, i, 0, n, m, ind), src + i * h, h * sizeof (double));
     }
 }
 
@@ -170,7 +170,7 @@ Residual (double* a, double* x, int n, int m, int pos_mul)
   double norm = 0; //Norm of block line of product
   int *ind = nullptr;
 
-  memset(mul, 0, (n + 3 * m) * m * sizeof (double));
+  memset (mul, 0, (n + 3 * m) * m * sizeof (double));
   d1 = mul + n * m;
   d2 = d1 + m * m;
   d3 = d2 + m * m;
@@ -206,15 +206,19 @@ Residual (double* a, double* x, int n, int m, int pos_mul)
   return res;
 }
 
-//Перед обращением надо правильно заполнить массив перестановки индексов
 int
 Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *ind)
 {
+  for (int i = 0; i < matrix_n; i++)
+    {
+      ind[i] = i;
+    }
   memset (inversed, 0, matrix_n * matrix_n * sizeof (double));
   for (int i = 0; i < matrix_n; i++)
     {
       inversed[i * matrix_n + i] = 1.;
     }
+
   //Прямой ход
   for (int s = 0; s < matrix_n; s++)
     {
@@ -235,14 +239,13 @@ Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *i
       swap = ind[s];
       ind[s] = ind[n_max];
       ind[n_max] = swap;
-      
+
       //Домножаем строку на обратный к первому элементу
       if (fabs (matrix[ind[s] * matrix_n + s]) < matrix_norm * EPS)
         {
-          return -1;
+          return CANNOT_SOLVE;
         }
       reverse = 1. / matrix[ind[s] * matrix_n + s];
-      matrix[ind[s] * matrix_n + s] = 1.;
       for (i = 0; i < s + 1; i++)
         {
           inversed[ind[s] * matrix_n + i] *= reverse;
@@ -252,12 +255,11 @@ Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *i
           inversed[ind[s] * matrix_n + i] *= reverse;
           matrix[ind[s] * matrix_n + i] *= reverse;
         }
-      
+
       //Из каждой нижележащей строки вычитаем первую, домноженную на первый элемент строки
       for (i = s + 1; i < matrix_n; i++)
         {
           int j = 0;
-          
           for (j = 0; j < s + 1; j++)
             {
               inversed[ind[i] * matrix_n + j] -= matrix[ind[i] * matrix_n + s] * inversed[ind[s] * matrix_n + j];
@@ -267,9 +269,10 @@ Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *i
               inversed[ind[i] * matrix_n + j] -= matrix[ind[i] * matrix_n + s] * inversed[ind[s] * matrix_n + j];
               matrix[ind[i] * matrix_n + j] -= matrix[ind[i] * matrix_n + s] * matrix[ind[s] * matrix_n + j];
             }
-          //matrix[ind[i] * matrix_n + s] = 0.;
         }
     }
+
+  //Обратный ход
   for (int s = matrix_n - 1; s >= 0; s--)
     {
       //Для всех вышележащих вычитаем последнюю строку, домноженную на s-ый элемент строки
@@ -279,8 +282,177 @@ Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *i
             {
               inversed[ind[i] * matrix_n + j] -= inversed[ind[s] * matrix_n + j] * matrix[ind[i] * matrix_n + s];
             }
-          //matrix[ind[i] * matrix_n + s] = 0.;
         }
     }
-  return 0;
+  ReplaceLines (inversed, matrix_n, 1, ind);
+  return SUCCESS;
+}
+
+int
+Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, int matrix_norm, int *ind)
+{
+  int l = matrix_n % block_m, k = matrix_n / block_m;
+  int blocks_number = l ? k + 1 : k; //Number of blocks
+  double *a1 = matrix + 2 * matrix_n * matrix_n, *a2 = a1 + block_m * block_m, *a3 = a2 + block_m * block_m; //Reserved blocks
+  double *d = a3 + block_m * block_m; //Inversed block
+  
+  //Elimination
+  for (int s = 0; s < blocks_number; s++)
+    {
+      int height_width_ss = (s < k) ? block_m : l; //Width and height of block in position ss
+      int err = CANNOT_SOLVE; //Error flag
+      double min = 1e50; //Maximum of norms
+      int n_bl_min = 0; //Number of block with minimum norm of inversed matrix
+      int swap = 0;
+      double block_norm = 0;
+
+      //Поиск главного
+      GetBlock (matrix, a1, s, s, matrix_n, block_m, ind);
+      block_norm = Norm (a1, height_width_ss, height_width_ss);
+      if ((block_norm > matrix_norm * EPS) && (!Inverse (a1, d, height_width_ss, block_norm, ind + matrix_n)))
+        {
+          err = 0;
+          n_bl_min = s;
+          min = Norm (d, height_width_ss, height_width_ss);
+        }
+      for (int i = s + 1; i < k; i++)
+        {
+          GetBlock (matrix, a1, i, s, matrix_n, block_m, ind);
+          block_norm = Norm (a1, height_width_ss, height_width_ss);
+          if ((block_norm < matrix_norm * EPS) || (Inverse (a1, a2, block_m, block_norm, ind + matrix_n)))
+            {
+              continue;
+            }
+          err = 0;
+          double norm_inversed = Norm (a2, height_width_ss, height_width_ss);
+          if (norm_inversed < min)
+            {
+              min = norm_inversed;
+              n_bl_min = i;
+              memcpy (d, a2, height_width_ss * height_width_ss * sizeof (double));
+            }
+        }
+      if (err == CANNOT_SOLVE)
+        {
+          return CANNOT_SOLVE;
+        }
+      for (int i = 0; (i < block_m) && (s != n_bl_min); i++)
+        {
+          swap = ind[s + i];
+          ind[s + i] = ind[n_bl_min + i];
+          ind[n_bl_min + i] = swap;
+        }
+      
+      //Домножаем строку на обратный к первому
+      for (int j = 0; j < s + 1; j++)
+        {
+          int width_block = (j < k) ? block_m : l; //ширина блока в столбце j 
+          GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
+          Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
+          SetBlock (inversed_matrix, a2, s, j, matrix_n, block_m, ind);
+        }
+      for (int j = s + 1; j < blocks_number; j++)
+        {
+          int width_block = (j < k) ? block_m : l; //ширина блока в столбце j 
+          GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
+          Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
+          SetBlock (inversed_matrix, a2, s, j, matrix_n, block_m, ind);
+
+          GetBlock (matrix, a1, s, j, matrix_n, block_m, ind);
+          Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
+          SetBlock (matrix, a2, s, j, matrix_n, block_m, ind);
+        }
+
+      //Из каждой нижележащей вычитаем первую, умноженную на первый элемент строки
+      for (int i = s + 1; i < blocks_number; i++)
+        {
+          int height_block = (i < k) ? block_m : l;
+          GetBlock (matrix, d, i, s, matrix_n, block_m, ind);
+          for (int j = 0; j < s + 1; j++)
+            {
+              int width_block = (j < k) ? block_m : l;
+              GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
+              Multi (d, a1, a2, height_block, height_width_ss, width_block);
+              GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
+              Minus (a1, a2, a3, height_block, width_block);
+              SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+            }
+          for (int j = s + 1; j < blocks_number; j++)
+            {
+              int width_block = (j < k) ? block_m : l;
+              GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
+              Multi (d, a1, a2, height_block, height_width_ss, width_block);
+              GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
+              Minus (a1, a2, a3, height_block, width_block);
+              SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+
+              GetBlock (matrix, a1, s, j, matrix_n, block_m, ind);
+              Multi (d, a1, a2, height_block, height_width_ss, width_block);
+              GetBlock (matrix, a1, i, j, matrix_n, block_m, ind);
+              Minus (a1, a2, a3, height_block, width_block);
+              SetBlock (matrix, a3, i, j, matrix_n, block_m, ind);
+            }
+        }
+    }
+  
+  //Обратный ход
+  for (int s = blocks_number - 1; s >= 0; s--)
+    {
+      int height_width_ss = (s < k) ? block_m : l; //Width and height of block in position ss
+      //Для всех вышележащих вычитаем последнюю строку, домноженную на s-ый элемент строки
+      for (int i = s - 1; i >= 0; i--)
+        {
+          int height_block = (i < k) ? block_m : l;
+          GetBlock (matrix, d, i, s, matrix_n, block_m, ind);
+          for (int j = 0; j < blocks_number; j++)
+            {
+              int width_block = (j < k) ? block_m : l;
+              GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
+              Multi (d, a1, a2, height_block, height_width_ss, width_block);
+              GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
+              Minus (a1, a2, a3, height_block, width_block);
+              SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+            }
+        }
+    }
+  ReplaceLines (inversed_matrix, matrix_n, block_m, ind);
+  return SUCCESS;
+}
+
+void
+ReplaceLines (double *matrix, int matrix_n, int block_m, int *ind)
+{
+  double *buf = new double[matrix_n];
+  int k = matrix_n / block_m, l = matrix_n % block_m;
+  int number_of_blocks = l ? k + 1 : k;
+  double *d = nullptr;
+  int p = 0;
+
+  for (int i = 0; i < number_of_blocks; i++)
+    {
+      int j = i;
+      p = ind[j];
+      if ((ind[i] == i) || (ind[i] < 0))
+        {
+          continue;
+        }
+      memcpy (buf, matrix + i * matrix_n, matrix_n * sizeof (double));
+      memcpy (matrix + i * matrix_n, matrix + ind[i] * matrix_n, matrix_n * sizeof (double));
+      while (p != i)
+        {
+          j = p;
+          if (ind[j] == i)
+            {
+              d = buf;
+            }
+          else
+            {
+              d = matrix + ind[j] * matrix_n;
+            }
+          memcpy (matrix + j * matrix_n, d, matrix_n * sizeof (double));
+          p = ind[j];
+          ind[j] = -1;
+        }
+    }
+  delete[] buf;
 }
