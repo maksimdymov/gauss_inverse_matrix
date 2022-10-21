@@ -78,9 +78,9 @@ PrintMatr (const double *const a, int l, int k, int n)
     {
       for (int j = 0; j < min2; j++)
         {
-          fprintf(stdout, " %10.3e", a[i * n + j]);
+          fprintf (stdout, " %10.3e", a[i * n + j]);
         }
-      fprintf(stdout, "\n");
+      fprintf (stdout, "\n");
     }
-  fprintf(stdout, "\n");
+  fprintf (stdout, "\n");
 }
