@@ -241,11 +241,11 @@ Inverse (double *matrix, double *inversed, int matrix_n, double matrix_norm, int
       ind[n_max] = swap;
 
       //Домножаем строку на обратный к первому элементу
-      if (fabs (matrix[ind[s] * matrix_n + s]) < matrix_norm * EPS)
+      if (max < matrix_norm * EPS)
         {
           return CANNOT_SOLVE;
         }
-      reverse = 1. / matrix[ind[s] * matrix_n + s];
+      reverse = 1. / max;
       for (i = 0; i < s + 1; i++)
         {
           inversed[ind[s] * matrix_n + i] *= reverse;
@@ -301,7 +301,7 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
     {
       int height_width_ss = (s < k) ? block_m : l; //Width and height of block in position ss
       int err = CANNOT_SOLVE; //Error flag
-      double min = 1e50; //Maximum of norms
+      double min = 1e50; //Minimum of norms
       int n_bl_min = 0; //Number of block with minimum norm of inversed matrix
       int swap = 0;
       double block_norm = 0;
