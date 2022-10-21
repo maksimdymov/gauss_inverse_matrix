@@ -207,7 +207,7 @@ Residual (double* a, double* x, int n, int m, int pos_mul)
 }
 
 int
-Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *ind)
+Inverse (double *matrix, double *inversed, int matrix_n, double matrix_norm, int *ind)
 {
   for (int i = 0; i < matrix_n; i++)
     {
@@ -289,7 +289,7 @@ Inverse (double *matrix, double *inversed, int matrix_n, int matrix_norm, int *i
 }
 
 int
-Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, int matrix_norm, int *ind)
+Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, double matrix_norm, int *ind)
 {
   int l = matrix_n % block_m, k = matrix_n / block_m;
   int blocks_number = l ? k + 1 : k; //Number of blocks
