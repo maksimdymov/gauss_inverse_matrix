@@ -34,7 +34,7 @@ int main(int argc, char * argv[])
     {
       return PrintErrorMsgByCode (MAIN_ARGS_ERROR, argv[0]);
     }
-  if ((s < 0) || (s > 4))
+  if ((s < 0) || (s > 4) || (n <= 0) || (m <= 0))
     {
       return PrintErrorMsgByCode (MAIN_ARGS_ERROR, argv[0]);
     }
@@ -86,7 +86,8 @@ int main(int argc, char * argv[])
     {
       delete[] a;
       delete[] ind;
-      return PrintErrorMsgByCode (err, argv[0]);
+      printf ("%s : Task = %d Res1 = %e Res2 = %e T1 = %.2f T2 = %.2f S = %d N = %d M = %d\n", argv[0], 12, -1., -1., elapsed, residual_time, s, n, m);
+      return CANNOT_SOLVE;
     }
   fprintf (stdout, "Inversed matrix:\n");
   PrintMatr (x, r, r, n);

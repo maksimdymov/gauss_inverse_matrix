@@ -245,7 +245,7 @@ Inverse (double *matrix, double *inversed, int matrix_n, double matrix_norm, int
         {
           return CANNOT_SOLVE;
         }
-      reverse = 1. / max;
+      reverse = 1. / matrix[ind[s] * matrix_n + s];
       for (i = 0; i < s + 1; i++)
         {
           inversed[ind[s] * matrix_n + i] *= reverse;

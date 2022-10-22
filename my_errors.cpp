@@ -10,39 +10,39 @@ PrintErrorMsgByCode (int code, char* msg)
       break;
 
     case MAIN_ARGS_ERROR:
-      fprintf (stderr, "Usage: %s <n> <m> <r> <s> [file]\n", msg);
+      printf ("Usage: %s <n> <m> <r> <s> [file]\n", msg);
       break;
 
     case FILE_OPENING_ERROR:
-      fprintf (stderr, "Cannot open file %s\n", msg);
+      printf ("Cannot open file %s\n", msg);
       break;
 
     case FILE_READING_ERROR:
-      fprintf (stderr, "Cannot read from file %s\n", msg);
+      printf ("Cannot read from file %s\n", msg);
       break;
 
     case FILE_PRINTING_ERROR:
-      fprintf (stderr, "Cannot print in file %s\n", msg);
+      printf ("Cannot print in file %s\n", msg);
       break;
 
     case ALLOCATE_MEMORY_ERROR:
-      fprintf (stderr, "Cannot allocate %s bytes\n", msg);
+      printf ("Cannot allocate %s bytes\n", msg);
       break;
 
     case END_OF_FILE:
-      fprintf (stderr, "Reached end of file %s, but matrix wasn't completely filled\n", msg);
+      printf ("Reached end of file %s, but matrix wasn't completely filled\n", msg);
       break;
 
     case TOO_MANY_INFO:
-      fprintf (stderr, "Too many information in file %s\n", msg);
+      printf ("Too many information in file %s\n", msg);
       break;
 
     case CANNOT_SOLVE:
-      fprintf (stderr, "Cannot inverse matrix\n");
+      printf ("Cannot inverse matrix\n");
       break;
 
     default:
-      fprintf (stderr, "Sorry, something went wrong...\nError code: %d\nError message: %s", code, msg);
+      printf ("Sorry, something went wrong...\nError code: %d\nError message: %s", code, msg);
       break;
   }
   return code;
