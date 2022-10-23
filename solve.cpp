@@ -284,7 +284,7 @@ Inverse (double *matrix, double *inversed, int matrix_n, double matrix_norm, int
             }
         }
     }
-  ReplaceLines (inversed, matrix_n, 1, ind);
+  ReplaceLines (inversed, matrix_n, ind);
   return SUCCESS;
 }
 
@@ -338,9 +338,9 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
         }
       for (int i = 0; (i < block_m) && (s != n_bl_min); i++)
         {
-          swap = ind[s + i];
-          ind[s + i] = ind[n_bl_min + i];
-          ind[n_bl_min + i] = swap;
+          swap = ind[s * block_m + i];
+          ind[s * block_m + i] = ind[n_bl_min * block_m + i];
+          ind[n_bl_min * block_m + i] = swap;
         }
       
       //Домножаем строку на обратный к первому
@@ -415,20 +415,18 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
             }
         }
     }
-  ReplaceLines (inversed_matrix, matrix_n, block_m, ind);
+  ReplaceLines (inversed_matrix, matrix_n, ind);
   return SUCCESS;
 }
 
 void
-ReplaceLines (double *matrix, int matrix_n, int block_m, int *ind)
+ReplaceLines (double *matrix, int matrix_n, int *ind)
 {
   double *buf = new double[matrix_n];
-  int k = matrix_n / block_m, l = matrix_n % block_m;
-  int number_of_blocks = l ? k + 1 : k;
   double *d = nullptr;
   int p = 0;
 
-  for (int i = 0; i < number_of_blocks; i++)
+  for (int i = 0; i < matrix_n; i++)
     {
       int j = i;
       p = ind[j];
