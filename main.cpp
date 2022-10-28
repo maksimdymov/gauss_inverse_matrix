@@ -4,7 +4,8 @@
 #include "my_errors.h"
 #include "solve.h"
 
-int main(int argc, char * argv[])
+int
+main(int argc, char *argv[])
 {
   int n = 0; //Size of matrix
   int m = 0; //Size of block
