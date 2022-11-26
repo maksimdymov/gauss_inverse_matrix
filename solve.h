@@ -14,6 +14,6 @@ void Plus (double *x, double *y, double *res, int v, int h);
 void Minus (double *x, double *y, double *res, int v, int h);
 int Inverse (double *matrix, double *inversed, int matrix_n, double matrix_norm, int *ind);
 int Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, double matrix_norm, int *ind);
-void ReplaceLines (double *matrix, int matrix_n, int *ind);
+void ReplaceLines (double *matrix, int matrix_n, int *ind, double *buf);
 
 #endif

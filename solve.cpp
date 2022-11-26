@@ -284,7 +284,7 @@ Inverse (double *matrix, double *inversed, int matrix_n, double matrix_norm, int
             }
         }
     }
-  ReplaceLines (inversed, matrix_n, ind);
+  ReplaceLines (inversed, matrix_n, ind, inversed + matrix_n * matrix_n);
   return SUCCESS;
 }
 
@@ -295,7 +295,7 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
   int blocks_number = l ? k + 1 : k; //Number of blocks
   double *a1 = matrix + 2 * matrix_n * matrix_n, *a2 = a1 + block_m * block_m, *a3 = a2 + block_m * block_m; //Reserved blocks
   double *d = a3 + block_m * block_m; //Inversed block
-  
+
   //Elimination
   for (int s = 0; s < blocks_number; s++)
     {
@@ -342,22 +342,27 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
           ind[s * block_m + i] = ind[n_bl_min * block_m + i];
           ind[n_bl_min * block_m + i] = swap;
         }
-      
+
       //Домножаем строку на обратный к первому
       for (int j = 0; j < s + 1; j++)
         {
           int width_block = (j < k) ? block_m : l; //ширина блока в столбце j 
           GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
-          Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
-          SetBlock (inversed_matrix, a2, s, j, matrix_n, block_m, ind);
+          if ((Norm (a1, height_width_ss, width_block) > EPS * matrix_norm) || (matrix_n < 50))
+            {
+              Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
+              SetBlock (inversed_matrix, a2, s, j, matrix_n, block_m, ind);
+            }
         }
       for (int j = s + 1; j < blocks_number; j++)
         {
           int width_block = (j < k) ? block_m : l; //ширина блока в столбце j 
           GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
-          Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
-          SetBlock (inversed_matrix, a2, s, j, matrix_n, block_m, ind);
-
+          if ((Norm (a1, height_width_ss, width_block) > EPS * matrix_norm) || (matrix_n < 50))
+            {
+              Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
+              SetBlock (inversed_matrix, a2, s, j, matrix_n, block_m, ind);
+            }
           GetBlock (matrix, a1, s, j, matrix_n, block_m, ind);
           Multi (d, a1, a2, height_width_ss, height_width_ss, width_block);
           SetBlock (matrix, a2, s, j, matrix_n, block_m, ind);
@@ -372,25 +377,34 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
             {
               int width_block = (j < k) ? block_m : l;
               GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
-              Multi (d, a1, a2, height_block, height_width_ss, width_block);
-              GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
-              Minus (a1, a2, a3, height_block, width_block);
-              SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+              if ((Norm (a1, height_width_ss, width_block) > EPS * matrix_norm) || (matrix_n < 50))
+                {
+                  Multi (d, a1, a2, height_block, height_width_ss, width_block);
+                  GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
+                  Minus (a1, a2, a3, height_block, width_block);
+                  SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+                }
             }
           for (int j = s + 1; j < blocks_number; j++)
             {
               int width_block = (j < k) ? block_m : l;
               GetBlock (inversed_matrix, a1, s, j, matrix_n, block_m, ind);
-              Multi (d, a1, a2, height_block, height_width_ss, width_block);
-              GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
-              Minus (a1, a2, a3, height_block, width_block);
-              SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+              if ((Norm (a1, height_width_ss, width_block) > EPS * matrix_norm) || (matrix_n < 50))
+                {
+                  Multi (d, a1, a2, height_block, height_width_ss, width_block);
+                  GetBlock (inversed_matrix, a1, i, j, matrix_n, block_m, ind);
+                  Minus (a1, a2, a3, height_block, width_block);
+                  SetBlock (inversed_matrix, a3, i, j, matrix_n, block_m, ind);
+                }
 
               GetBlock (matrix, a1, s, j, matrix_n, block_m, ind);
-              Multi (d, a1, a2, height_block, height_width_ss, width_block);
-              GetBlock (matrix, a1, i, j, matrix_n, block_m, ind);
-              Minus (a1, a2, a3, height_block, width_block);
-              SetBlock (matrix, a3, i, j, matrix_n, block_m, ind);
+              if ((Norm (a1, height_width_ss, width_block) > EPS * matrix_norm) || (matrix_n < 50))
+                {
+                  Multi (d, a1, a2, height_block, height_width_ss, width_block);
+                  GetBlock (matrix, a1, i, j, matrix_n, block_m, ind);
+                  Minus (a1, a2, a3, height_block, width_block);
+                  SetBlock (matrix, a3, i, j, matrix_n, block_m, ind);
+                }
             }
         }
     }
@@ -415,14 +429,13 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
             }
         }
     }
-  ReplaceLines (inversed_matrix, matrix_n, ind);
+  ReplaceLines (inversed_matrix, matrix_n, ind, d);
   return SUCCESS;
 }
 
 void
-ReplaceLines (double *matrix, int matrix_n, int *ind)
+ReplaceLines (double *matrix, int matrix_n, int *ind, double *buf)
 {
-  double *buf = new double[matrix_n];
   double *d = nullptr;
   int p = 0;
 
@@ -452,5 +465,4 @@ ReplaceLines (double *matrix, int matrix_n, int *ind)
           ind[j] = -1;
         }
     }
-  delete[] buf;
 }

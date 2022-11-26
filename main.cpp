@@ -13,8 +13,8 @@ main(int argc, char *argv[])
   int s = 0; //Number of formulae
   int err = 0;
   FILE *fi = nullptr; //Input file
-  double* a = nullptr; //Pointer of matrix
-  double* x = nullptr; //Pointer of attached matrix
+  double *a = nullptr; //Pointer of matrix
+  double *x = nullptr; //Pointer of attached matrix
   double matrix_norm = 0; //Norm of matrix
   double time1 = 0, time2 = 0, time3 = 0, time4 = 0;
   double elapsed = 0; //Time of calculating inversed matrix
@@ -80,7 +80,6 @@ main(int argc, char *argv[])
   PrintMatr (a, r, r, n);
   matrix_norm = Norm (a, n, n); //Norm of the whole matrix
   time1 = clock ();
-  //err = Inverse (a, x, n, matrix_norm, ind);
   err = Solve (a, x, n, m, matrix_norm, ind);
   time2 = clock ();
   if (err == CANNOT_SOLVE)
