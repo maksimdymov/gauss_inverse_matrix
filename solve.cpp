@@ -408,9 +408,12 @@ Solve (double *matrix, double *inversed_matrix, int matrix_n, int block_m, doubl
             }
         }
     }
+
+  PrintMatr (inversed_matrix, 5, 5, matrix_n);
+  printf ("\n\n");
   
   //Обратный ход
-  for (int s = blocks_number - 1; s >= 0; s--)
+  for (int s = blocks_number - 1; s > 0; s--)
     {
       int height_width_ss = (s < k) ? block_m : l; //Width and height of block in position ss
       //Для всех вышележащих вычитаем последнюю строку, домноженную на s-ый элемент строки
